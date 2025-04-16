@@ -1,31 +1,72 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Maksym Zadoya</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="description" content="Personal site of Maksym Zadoya, future IT Systems Engineer & Developer.">
+  <title>Maksym Zadoya | zadoya.dev</title>
   <style>
+    @import url('https://fonts.googleapis.com/css2?family=Fira+Code&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      font-family: Arial, sans-serif;
-      background: #0f1115;
+      font-family: 'Fira Code', monospace;
+      background: #0f0f0f;
       color: #f5f5f5;
       display: flex;
-      flex-direction: column;
       align-items: center;
       justify-content: center;
       height: 100vh;
-      margin: 0;
+      text-align: center;
+      flex-direction: column;
+      padding: 20px;
     }
+
     h1 {
       font-size: 2.5rem;
+      color: #00ff88;
+      margin-bottom: 0.5rem;
     }
-    p {
+
+    h2 {
       font-size: 1.2rem;
-      color: #aaa;
+      font-weight: normal;
+      color: #ccc;
+      margin-bottom: 2rem;
+    }
+
+    .loader {
+      border: 3px solid #1e1e1e;
+      border-top: 3px solid #00ff88;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      animation: spin 1s linear infinite;
+      margin-bottom: 1rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      font-size: 0.8rem;
+      color: #555;
     }
   </style>
 </head>
 <body>
-  <h1>Coming soon</h1>
-  <p>Personal site of Maksym Zadoya<br>IT Systems Engineer & Developer</p>
+  <div class="loader"></div>
+  <h1>zadoya.dev</h1>
+  <h2>Coming Soon. Something meaningful is in the works.</h2>
+  <footer>&copy; 2025 Maksym Zadoya</footer>
 </body>
 </html>
