@@ -1,0 +1,168 @@
+import { useEffect, useRef } from "react";
+
+const text = "zadoya.dev";
+
+export default function ZadoyaIntro() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d")!;
+        if (!ctx) return;
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const pixelSize = 3;
+        const gap = 1;
+        const spacing = pixelSize + gap;
+
+        const logoWidth = 150;
+        const logoHeight = 40;
+        const offsetX = Math.floor((width - logoWidth) / 2);
+        const offsetY = 55;
+        const textYOffset = -18;
+
+        const tempBuildBuffer: { x: number, y: number, active: boolean, time: number, brightness: number, fuzz: number }[] = [];
+
+        let nameOpacity = 0;
+        let glitchProgress = 0;
+        let flickerClock = 0;
+        let crazyGlitchTimer = 0;
+        let buildDelay = 0;
+
+        function simulateRetroBuild() {
+            if (tempBuildBuffer.length === 0) {
+                const tempCanvas = document.createElement("canvas");
+                const tempCtx = tempCanvas.getContext("2d");
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+
+                if (!tempCtx) return;
+                tempCtx.fillStyle = white;
+                tempCtx.font = bold ${logoHeight}px monospace;
+                tempCtx.textAlign = "center";
+                tempCtx.textBaseline = "top";
+                tempCtx.fillText(text, width / 2, offsetY + textYOffset);
+
+                const data = tempCtx.getImageData(0, 0, width, height).data;
+
+                for (let y = 0; y < height; y += spacing) {
+                    for (let x = 0; x < width; x += spacing) {
+                        const index = (y * width + x) * 4;
+                        if (data[index + 3] > 10) {
+                            tempBuildBuffer.push({ x, y, active: false, time: Math.random() * 100, brightness: 0, fuzz: 6 });
+                        }
+                    }
+                }
+            }
+
+            tempBuildBuffer.forEach((pix) => {
+                if (pix.time <= 0) {
+                    pix.active = true;
+                    if (pix.fuzz > 0) pix.fuzz--;
+                } else {
+                    pix.time--;
+                }
+
+                if (pix.active) {
+                    // Различное увеличение яркости для каждого пикселя
+                    pix.brightness = Math.min(pix.brightness + 0.01, 1); // Увеличиваем яркость
+                    const offsetX = (Math.random() - 0.5) * pix.fuzz;
+                    const offsetY = (Math.random() - 0.5) * pix.fuzz;
+                    ctx.fillStyle = rgba(255,255,255,${pix.brightness}); // Используем яркость для каждого пикселя
+                    ctx.fillRect(pix.x + offsetX, pix.y + offsetY, pixelSize, pixelSize);
+                } else {
+                    if (Math.random() < 0.2) {
+                        ctx.fillStyle = "rgba(255,255,255,0.1)";
+                        ctx.fillRect(pix.x + (Math.random() - 0.5) * 5, pix.y + (Math.random() - 0.5) * 5, pixelSize, pixelSize);
+                    }
+                }
+            });
+        }
+
+        function drawStaticName() {
+            nameOpacity = Math.min(nameOpacity + 0.01, 1);
+            glitchProgress += 0.015;
+            flickerClock++;
+            crazyGlitchTimer++;
+
+            const tempCanvas = document.createElement("canvas");
+            const tempCtx = tempCanvas.getContext("2d");
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+
+            if (!tempCtx) return;
+            tempCtx.fillStyle = rgba(255,255,255,${nameOpacity});
+            tempCtx.font = bold ${logoHeight}px monospace;
+            tempCtx.textAlign = "center";
+            tempCtx.textBaseline = "top";
+            tempCtx.fillText(text, width / 2, offsetY + textYOffset);
+
+            const data = tempCtx.getImageData(0, 0, width, height).data;
+
+            for (let y = 0; y < height; y += spacing) {
+                for (let x = 0; x < width; x += spacing) {
+                    const index = (y * width + x) * 4;
+                    if (data[index + 3] > 10) {
+                        let dx = 0, dy = 0, alpha = nameOpacity;
+                        const heavyGlitch = flickerClock % 180 < 20 && Math.random() < 0.2;
+                        const lightFlicker = Math.random() < 0.006;
+                        const superGlitch = crazyGlitchTimer % 600 === 0 && Math.random() < 0.8;
+
+                        if (superGlitch) {
+                            dx = (Math.random() - 0.5) * 10;
+                            dy = (Math.random() - 0.5) * 10;
+                            alpha *= 0.2 + Math.random() * 0.5;
+                            ctx.fillStyle = rgba(${Math.random() * 255},${Math.random() * 255},255,${alpha});
+                            ctx.fillRect(x + dx, y + dy, pixelSize * 2, pixelSize * 2);
+                            continue;
+                        }
+
+                        if (heavyGlitch) {
+                            dx = (Math.random() - 0.5) * 1.5;
+                            dy = (Math.random() - 0.5) * 1.5;
+                            alpha *= 0.6 + Math.random() * 0.4;
+                        } else if (lightFlicker) {
+                            dx = (Math.random() - 0.5);
+                            dy = (Math.random() - 0.5);
+                            alpha *= 0.7 + Math.random() * 0.3;
+                        }
+                        ctx.fillStyle = rgba(255,255,255,${alpha});
+                        ctx.fillRect(x + dx, y + dy, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, width, height);
+
+            if (buildDelay < 40) {
+                simulateRetroBuild();
+                buildDelay++;
+            } else {
+                drawStaticName();
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+        />
+    );
+}
+

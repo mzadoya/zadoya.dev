@@ -1,0 +1,244 @@
+import { useEffect, useRef } from "react";
+
+const text = "zadoya.dev";
+const binarySequence = (
+    "0011110001111010011000010110010001101111011110010110000100101110011001000110010101110110001000000010111100111110"
+).split("");
+
+const charMap: Record<string, number[][]> = {
+    "0": [
+        [0,1,1,0],
+        [1,0,0,1],
+        [1,0,0,1],
+        [1,0,0,1],
+        [0,1,1,0],
+    ],
+    "1": [
+        [0,0,1,0],
+        [0,1,1,0],
+        [0,0,1,0],
+        [0,0,1,0],
+        [0,1,1,1],
+    ]
+};
+
+export default function ZadoyaIntro() {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+        const ctx = canvas.getContext("2d")!;
+        if (!ctx) return;
+
+        let width = canvas.width = window.innerWidth;
+        let height = canvas.height = window.innerHeight;
+
+        const pixelSize = 3;
+        const gap = 1;
+        const spacing = pixelSize + gap;
+        const charWidth = 4;
+        const charHeight = 5;
+
+        const logoWidth = 150;
+        const logoHeight = 40;
+        const fadeMargin = 20;
+
+        const displayWidth = logoWidth;
+        const displayHeight = logoHeight;
+        const offsetX = Math.floor((width - displayWidth) / 2);
+        const offsetY = 55;
+        const textYOffset = -18; // подбери вручную, например -2 или -3
+
+
+        const pixelBuffer: { x: number, y: number, brightness: number }[] = [];
+        const tempBuildBuffer: { x: number, y: number, active: boolean, time: number, fuzz: number }[] = [];
+
+        let scrollOffset = 0;
+        let drawName = false;
+        let nameOpacity = 0;
+        let glitchProgress = 0;
+        let flickerClock = 0;
+        let buildDelay = 0;
+        let crazyGlitchTimer = 0;
+
+        function drawChar(bit: string, offsetX: number, brightness: number) {
+            const pattern = charMap[bit];
+            if (!pattern) return;
+
+            for (let y = 0; y < charHeight; y++) {
+                for (let x = 0; x < charWidth; x++) {
+                    if (pattern[y][x] === 1) {
+                        const px = offsetX + x * spacing;
+                        const py = offsetY + y * spacing;
+                        pixelBuffer.push({ x: px, y: py, brightness });
+                    }
+                }
+            }
+        }
+
+        function draw() {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0, 0, width, height);
+            pixelBuffer.length = 0;
+
+            const stride = (charWidth + 1) * spacing;
+            const totalWidth = binarySequence.length * stride;
+            const baseX = offsetX + displayWidth - scrollOffset;
+
+            for (let i = 0; i < binarySequence.length; i++) {
+                const bit = binarySequence[i];
+                const x = baseX + i * stride;
+
+                if (x + stride < offsetX - fadeMargin || x > offsetX + displayWidth + fadeMargin) continue;
+
+                let brightness = 255;
+                if (x < offsetX + fadeMargin) {
+                    brightness = Math.floor(((x - offsetX + fadeMargin) / fadeMargin) * 255);
+                } else if (x > offsetX + displayWidth - fadeMargin) {
+                    brightness = Math.floor(((offsetX + displayWidth + fadeMargin - x) / fadeMargin) * 255);
+                }
+
+                if (brightness < 0) brightness = 0;
+                if (brightness > 0) drawChar(bit, x, brightness);
+            }
+
+            for (const pixel of pixelBuffer) {
+                ctx.fillStyle = `rgb(${pixel.brightness}, ${pixel.brightness}, ${pixel.brightness})`;
+                ctx.fillRect(pixel.x, pixel.y, pixelSize, pixelSize);
+            }
+
+            if (scrollOffset > totalWidth + displayWidth + 40) {
+                drawName = true;
+            }
+
+            if (drawName && buildDelay < 40) simulateRetroBuild();
+            if (drawName && buildDelay >= 40) drawStaticName();
+            if (drawName) buildDelay++;
+        }
+
+        function simulateRetroBuild() {
+            if (tempBuildBuffer.length === 0) {
+                const tempCanvas = document.createElement("canvas");
+                const tempCtx = tempCanvas.getContext("2d");
+                tempCanvas.width = width;
+                tempCanvas.height = height;
+
+                if (!tempCtx) return;
+                tempCtx.fillStyle = `white`;
+                tempCtx.font = `bold ${displayHeight}px monospace`;
+                tempCtx.textAlign = "center";
+                tempCtx.textBaseline = "top";
+                tempCtx.fillText(text, width / 2, offsetY + textYOffset);
+
+                const data = tempCtx.getImageData(0, 0, width, height).data;
+
+                for (let y = 0; y < height; y += spacing) {
+                    for (let x = 0; x < width; x += spacing) {
+                        const index = (y * width + x) * 4;
+                        if (data[index + 3] > 10) {
+                            tempBuildBuffer.push({ x, y, active: false, time: Math.random() * 100, fuzz: 6 });
+                        }
+                    }
+                }
+            }
+
+            tempBuildBuffer.forEach((pix) => {
+                if (pix.time <= 0) {
+                    pix.active = true;
+                    if (pix.fuzz > 0) pix.fuzz--;
+                } else {
+                    pix.time--;
+                }
+                if (pix.active) {
+                    const offsetX = (Math.random() - 0.5) * pix.fuzz;
+                    const offsetY = (Math.random() - 0.5) * pix.fuzz;
+                    ctx.fillStyle = `rgba(255,255,255,${1 - pix.fuzz / 6})`;
+                    ctx.fillRect(pix.x + offsetX, pix.y + offsetY, pixelSize, pixelSize);
+                } else {
+                    if (Math.random() < 0.2) {
+                        ctx.fillStyle = "rgba(255,255,255,0.1)";
+                        ctx.fillRect(pix.x + (Math.random() - 0.5) * 5, pix.y + (Math.random() - 0.5) * 5, pixelSize, pixelSize);
+                    }
+                }
+            });
+        }
+
+        function drawStaticName() {
+            if (nameOpacity < 1) nameOpacity += 0.01;
+            glitchProgress += 0.015;
+            flickerClock++;
+            crazyGlitchTimer++;
+
+            const tempCanvas = document.createElement("canvas");
+            const tempCtx = tempCanvas.getContext("2d");
+            tempCanvas.width = width;
+            tempCanvas.height = height;
+
+            if (!tempCtx) return;
+            tempCtx.fillStyle = `rgba(255,255,255,${nameOpacity})`;
+            tempCtx.font = `bold ${displayHeight}px monospace`;
+            tempCtx.textAlign = "center";
+            tempCtx.textBaseline = "top";
+
+            tempCtx.fillText(text, width / 2, offsetY + textYOffset);
+
+            const data = tempCtx.getImageData(0, 0, width, height).data;
+
+            for (let y = 0; y < height; y += spacing) {
+                for (let x = 0; x < width; x += spacing) {
+                    const index = (y * width + x) * 4;
+                    if (data[index + 3] > 10) {
+                        let dx = 0, dy = 0, alpha = nameOpacity;
+                        const heavyGlitch = flickerClock % 180 < 20 && Math.random() < 0.2;
+                        const lightFlicker = Math.random() < 0.006;
+                        const superGlitch = crazyGlitchTimer % 600 === 0 && Math.random() < 0.8;
+
+                        if (superGlitch) {
+                            dx = (Math.random() - 0.5) * 10;
+                            dy = (Math.random() - 0.5) * 10;
+                            alpha *= 0.2 + Math.random() * 0.5;
+                            ctx.fillStyle = `rgba(${Math.random()*255},${Math.random()*255},255,${alpha})`;
+                            ctx.fillRect(x + dx, y + dy, pixelSize * 2, pixelSize * 2);
+                            continue;
+                        }
+
+                        if (heavyGlitch) {
+                            dx = (Math.random() - 0.5) * 1.5;
+                            dy = (Math.random() - 0.5) * 1.5;
+                            alpha *= 0.6 + Math.random() * 0.4;
+                        } else if (lightFlicker) {
+                            dx = (Math.random() - 0.5);
+                            dy = (Math.random() - 0.5);
+                            alpha *= 0.7 + Math.random() * 0.3;
+                        }
+                        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+                        ctx.fillRect(x + dx, y + dy, pixelSize, pixelSize);
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            draw();
+            if (!drawName) {
+                scrollOffset += 2 + Math.pow(scrollOffset / 400, 2.1);
+            }
+            requestAnimationFrame(animate);
+        }
+
+        animate();
+
+        window.addEventListener("resize", () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+    }, []);
+
+    return (
+        <canvas
+            ref={canvasRef}
+            className="fixed top-0 left-0 w-full h-full z-0 pointer-events-none"
+        />
+    );
+}
