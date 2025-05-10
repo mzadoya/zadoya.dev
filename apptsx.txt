@@ -1,0 +1,15 @@
+
+export default function App() {
+    return (
+        <BrowserRouter>
+            <Routes>
+                <Route path="/" element={<DeveloperVCard />} /> {/* Главная страница */}
+                <Route path="/impressum" element={<Impressum />} /> {/* Страница Impressum */}
+                <Route path="/kontakt" element={<Kontakt />} /> {/* Страница Kontakt */}
+
+                {/* Маршрут для страницы NotFound, обрабатывающий все остальные неправильные маршруты */}
+                <Route path="*" element={<NotFound />} /> {/* Это будет отрисовывать NotFound для всех несуществующих путей */}
+            </Routes>
+        </BrowserRouter>
+    );
+}
